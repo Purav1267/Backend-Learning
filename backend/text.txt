@@ -1,0 +1,5 @@
+so to start building the backend through node
+first command you have to write is 
+npm init - it means node package manager is initializing into the terminal selected folder
+npm i express  - installing express.js
+then make a file server.js in that backend folder 
