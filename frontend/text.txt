@@ -33,3 +33,54 @@ the solution of the CORS issue is :-
 1- Whitelist the url, portnumber that the user is using and then user can access backend
 2- Make the server public , anyone can use it anytime just like api.github
 we used to extract information about us
+
+Without proxy
+
+Frontend: http://localhost:5173
+
+Backend: http://localhost:5000
+
+If frontend code says:
+
+fetch("http://localhost:5000/api/users")
+
+
+→ Browser sees you’re calling a different port → CORS error (unless backend explicitly allows it).
+
+🔹 With proxy (vite.config.js)
+export default {
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:5000", // backend
+        changeOrigin: true
+      }
+    }
+  }
+}
+
+
+Now if frontend code says:
+
+fetch("/api/users")
+
+
+➡️ What happens:
+
+Browser thinks you’re calling the same origin (http://localhost:5173/api/users). ✅ No CORS error.
+
+Vite dev server intercepts /api/....
+
+Vite forwards it behind the scenes to http://localhost:5000/api/users.
+
+Backend responds → Vite passes it back → frontend gets the response.
+
+✅ Effect
+
+To the browser/frontend → it looks like the request never left 5173.
+
+To the backend → it receives a normal request on 5000.
+
+You avoided writing messy full URLs everywhere.
+
+And no more CORS headache in dev.
