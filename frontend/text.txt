@@ -1,0 +1,35 @@
+So to make a react project we just have to write in the folder 
+
+npm create vite@latest .
+
+this command make the react file in the folder. 
+
+and to run the react file we just have to write 
+
+npm run dev
+
+
+
+and so now after this i have installed axios 
+so that is used in app.jsx for calling or fetching information thorugh internet
+it gives us access to the http requests like get , post , put & delete
+
+
+
+and now i am learning about CORS what does that mean and how it is used 
+so basically CORS is somewhat giving permission who can access my server 
+
+
+CORS means Safety of the server 
+CORS means Cross Origin Resource Sharing
+
+Cross origin means even if port number is changed then also there is a 
+cross origin
+different url is also considered as cross origin
+
+
+
+the solution of the CORS issue is :-
+1- Whitelist the url, portnumber that the user is using and then user can access backend
+2- Make the server public , anyone can use it anytime just like api.github
+we used to extract information about us
