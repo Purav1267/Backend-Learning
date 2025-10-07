@@ -16,12 +16,46 @@ import express from "express";
 
 const app = express()
 
-app.get("/",(req,res)=>{
-    res.send("Server is ready")
-})
+// app.get("/",(req,res)=>{
+//     res.send("Server is ready")
+// })
 
+// So here i was doing that bad practise like downloading all the 
+// frontend code using the line 
+
+
+// npm run build
+
+// this makes a dist folder which consist of all the frontend react
+// like react into basic html , css , js and now the thing is we just 
+// push all that frontend through our backend only means 
+// with only deploying the backend folder we can just deploy our whole 
+// project but there is a issue here if we want to change our frontend
+// then we have to remove this dist file from here and make another 
+// dist file and then make the changes accordingly. this thing
+// help us in not deploying our app on AWS , AZURE or making CI/CD 
+// pipeline or something. it just saves you alot of server cost 
+// it just make our work easy with vercel or any easy 
+// deploying cloud service.
+
+
+app.use(express.static('dist'));
+
+// so this line is the middleware
+// this means that we are saying to express to use the static file
+// dist in the backend while running their backend
+
+
+// now when we just start the backend server it will automatically 
+// give us the whole app within it because of dist file in it.
+
+
+
+
+// app.get("/",(req,res)=>{
+//     res.send("Server is ready")
+// })
 // get a list of 5 jokes
-
 app.get("/api/jokes",(req,res)=>{
     const jokes = [
         {
