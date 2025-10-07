@@ -61,6 +61,10 @@ app.get('/github',(req,res)=>{
     res.json(githubData)
 })
 
+app.get('/purav',(req,res)=>{
+    res.send("Hey there i am Purav from Macbook M4")
+})
+
 app.listen(process.env.PORT,()=>{
     console.log(`Example app listening on port ${process.env.PORT}`);
 })
