@@ -2,7 +2,10 @@ So to make a react project we just have to write in the folder
 
 npm create vite@latest .
 
-this command make the react file in the folder. 
+this command make the react file in the folder.
+
+. in the last make it to make the react file in the folder otherwise
+without the use of . in the end it will make a another folder
 
 and to run the react file we just have to write 
 
