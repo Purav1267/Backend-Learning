@@ -1,0 +1,4 @@
+this is like opposite of gitignore so it lets us keep the folders 
+like when you make folder with no files on it. Git just ignores them 
+and if you want not to ignore them then you use .gitkeep to like
+keep them in the github without any functionality that they can provide
