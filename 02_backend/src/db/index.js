@@ -60,3 +60,17 @@ export default connectDB
 //         throw error
 //     }
 // })()
+
+
+
+// const connectDB2 = async()=>{
+//     try {
+//         const connectinInstance = await mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`)
+//         console.log(`MONGODB IS CONNECTED. MD Host: ${connectinInstance.connection.host}`);
+//     } catch (error) {
+//         console.log("Error is: ", error);
+//         process.exit(1)
+//     }
+// }
+
+// export default connectDB2
