@@ -57,7 +57,7 @@ userSchema.methods.isPasswordCorrect = async function(password) {
     return await bcrypt.compare(password, this.password)
 }
 
-// we can;t use arrow functions here cause it doesnt have the context of this . 
+// we can't use arrow functions here cause it doesnt have the context of this . 
 // as we want the this password to be encrypted before saving and arrow function doesn't help us in that 
 // that why using basic function here.
 
