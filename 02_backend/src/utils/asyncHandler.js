@@ -16,10 +16,11 @@ const asyncHandler1 = (requestHandler)=>{
 // So there are 2 methods of asyncHandler 
 
 const asyncHandler2 = (requestHandler) => {
-    async(req,res,next)=>{
+    return (req,res,next)=>{
         Promise.resolve(requestHandler(req,res,next)).catch((error)=>{next(error)})
     }
 }
+export {asyncHandler2}
 
 // const asyncHandler = () => {}
 // const asyncHandler = (func) => {()=>{}}   it just means a function inside a function or function is having a return as a function
@@ -39,7 +40,7 @@ const asyncHandler = (func) => async(req,res,next) => {
 }
 
 
-export {asyncHandler}
+// export {asyncHandler}
 
 
 
