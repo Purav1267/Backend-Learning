@@ -1,6 +1,8 @@
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler2 } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
+import { uploadOnCloundinary } from "../utils/cloudinary.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 const registerUser = asyncHandler2(async (req,res) => {
     // get user details from frontend
@@ -15,6 +17,7 @@ const registerUser = asyncHandler2(async (req,res) => {
 
 
     const {fullName, email, username, password} = req.body
+    // console.log(req.body);
     console.log("Email: ",email);
 
     // if(fullName === ""){
@@ -55,10 +58,62 @@ const registerUser = asyncHandler2(async (req,res) => {
         // username or email in the database
     })
     if(existedUser){
-        throw new ApiError
+        throw new ApiError(409,"User with email or username already exists.")
     }
     // this means if the existedUser is having any data or true then
     // it is an error
+
+
+    const avatarLocalPath = req.files?.avatar[0]?.path
+    // this is the way of getting the access of avatar and its path
+    // it is just the way of getting the avatar through the user.routes
+    // and the multer that we wrote it just gives us the exact path
+
+    const coverImageLocalPath = req.files?.coverImage[0]?.path
+
+    // ? we have been using optional condition here cause of null 
+    // and undefined feature as the data should not be null and undefined 
+    // that we are talking to
+
+    if(!avatarLocalPath){
+        throw new ApiError(400,"Avatar file is required")
+    }
+    const avatar = await uploadOnCloundinary(avatarLocalPath)
+    const coverImage = await uploadOnCloundinary(coverImageLocalPath)
+
+    if(!avatar){
+        throw new ApiError(400,"Avatar not uploaded correctly on cloudinary.")
+    }
+
+
+    const user = await User.create({
+        fullName,
+        avatar: avatar.url,
+        coverImage: coverImage?.url || "",
+        // like this is the case why we have done this cause in the case of avatar we have 
+        // done all the exception handeling as in if the avatar is not there then throw the error
+        // but in the case of coverImage we didn't do that so here we did something like 
+        // optional condition on coverimage like if it exists then ok and give me the url but 
+        // if it doesn't exist then just make it empty.
+        email,
+        password,
+        username: username.toLowerCase()
+    })
+
+    const createdUser = await User.findById(user._id).select("-password -refreshToken")
+    // this is the way of removing the password and refresh token 
+    // while creating a new user and we are finding that new user with the help 
+    // of _id firstly we did this and in continuatiuon we thought of removing password and refreshtoken too
+    // and this .select method is used to select all in the first as by default but 
+    // if you write "-password -refreshToken" then it will deselect 
+    // both of them 
+    if(!createdUser){
+        throw new ApiError(500,"Something went wrong while registering the user")
+    }
+
+    return res.status(201).json(
+        new ApiResponse(200,createdUser,"User registered successfully")
+    )
 })
 
 export {registerUser}
