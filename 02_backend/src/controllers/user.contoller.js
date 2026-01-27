@@ -50,7 +50,7 @@ const registerUser = asyncHandler2(async (req,res) => {
     // field is "" exactly empty it means the data which was there 
     // was just empty spaces so we have to throw a error over there
 
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{username},{email}]
         // User.findOne is also from mongodb/moongose query
         // $or is just a or conditonal operator that is from mongodb/moongose query
@@ -107,13 +107,20 @@ const registerUser = asyncHandler2(async (req,res) => {
     // and this .select method is used to select all in the first as by default but 
     // if you write "-password -refreshToken" then it will deselect 
     // both of them 
-    if(!createdUser){
+
+
+    // the concept in the the createduser is like first we made the user in the user variable using User.create()
+    // and then we gave the details of the user and then in the created user we first find that user by using 
+    // findbyid(user._id) and then select all the information while removing the password and the refresh token 
+    // and then storing all the info in the createduser. and then in the last we can see we are returning the createduser only. 
+   if(!createdUser){
         throw new ApiError(500,"Something went wrong while registering the user")
     }
 
     return res.status(201).json(
         new ApiResponse(200,createdUser,"User registered successfully")
     )
+    // we have used the apiresponse file that we made and in that the structure was defined
 })
 
 export {registerUser}
