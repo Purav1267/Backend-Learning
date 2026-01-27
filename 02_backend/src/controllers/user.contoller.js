@@ -69,7 +69,14 @@ const registerUser = asyncHandler2(async (req,res) => {
     // it is just the way of getting the avatar through the user.routes
     // and the multer that we wrote it just gives us the exact path
 
-    const coverImageLocalPath = req.files?.coverImage[0]?.path
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path
+
+
+    let coverImageLocalPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+        coverImageLocalPath = req.files.coverImage[0].path
+    }
+    // this is the classical method of finding the path of the file
 
     // ? we have been using optional condition here cause of null 
     // and undefined feature as the data should not be null and undefined 
@@ -80,6 +87,9 @@ const registerUser = asyncHandler2(async (req,res) => {
     }
     const avatar = await uploadOnCloundinary(avatarLocalPath)
     const coverImage = await uploadOnCloundinary(coverImageLocalPath)
+
+    
+    if(req.files)
 
     if(!avatar){
         throw new ApiError(400,"Avatar not uploaded correctly on cloudinary.")
