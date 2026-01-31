@@ -89,4 +89,7 @@ userSchema.methods.generateRefreshToken = function(){
     )
 }
 
+// An access token is a short-lived credential used to authenticate API requests, while
+// a refresh token is a long-lived credential used to obtain new access tokens without 
+// requiring the user to log in again, improving both security and user experience.
 export const User = mongoose.model("User",userSchema)
