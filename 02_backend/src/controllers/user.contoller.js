@@ -3,6 +3,24 @@ import { asyncHandler2 } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloundinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { access } from "fs";
+import { ref } from "process";
+
+const generateAccessAndRefreshTokens = async(userId)=>{
+    try {
+        const user = await User.findById(userId)
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+
+        user.refreshToken = refreshToken
+        await user.save({validateBeforeSave: false})
+
+        return {accessToken,refreshToken}
+
+    } catch (error) {
+        throw new ApiError(500,"Something went wrong while generating refresh and access token.")
+    }
+}
 
 const registerUser = asyncHandler2(async (req,res) => {
     // get user details from frontend
@@ -133,4 +151,87 @@ const registerUser = asyncHandler2(async (req,res) => {
     // we have used the apiresponse file that we made and in that the structure was defined
 })
 
-export {registerUser}
+const loginUser = asyncHandler2(async(req,res)=>{
+    // req body -> data
+    // username or email
+    // find the user
+    // password check
+    // access and refresh token
+    // send cookie
+
+
+    const {email,username,password} = req.body
+
+    if(!username || !email){
+        throw new ApiError(400,"username or email is required.")
+    }
+
+   const user = await User.findOne({
+    $or: [{username}, {email} ]
+    })
+
+    if(!user){
+        throw new ApiError(404,"user does not exist")
+    }
+
+   const isPasswordValid = await user.isPasswordCorrect(password)
+   if(!isPasswordValid){
+    throw new ApiError(401,"Invalid user credentials")
+   }
+
+    const {accessToken, refreshToken}=await generateAccessAndRefreshTokens(user._id)
+
+    const loggedInUser = User.findById(user._id).select("-password -refreshToken")
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    // so this options variable is for cookies and in this if we write the following httpOnly as true, 
+    // and secure as true then it will only get updated through server side otherwise cookies can get 
+    // updated in the frontend too if we dont false these parameters
+
+    // so by default cookie can be modified in frontend too. and with these security steps frontend can only 
+    // see the cookie , can't modify it further.
+    
+    return res
+    .status(200)
+    .cookie("accessToken",accessToken, options)
+    .cookie("refreshToken", refreshToken,options)
+    .json(
+        new ApiResponse(
+          200,
+            {
+                user: loggedInUser, accessToken, refreshToken
+            },
+            "User logged In Successfully"
+        )
+    )
+
+})
+
+const logoutUser = asyncHandler2(async(req,res)=>{
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: {
+                refreshToken: undefined
+            }
+        },
+        {
+            new: true
+        },
+        // here new is like jo aapko response milega usme new updated value milegi   
+    )
+        const options = {
+        httpOnly : true,
+        secure: true
+    }
+    return res
+    .status(200)
+    .clearCookie("accessToken",options)
+    .clearCookie("refreshToken",options)
+    .json(new ApiResponse(200,{},"User logged Out"))
+})
+
+export {registerUser,loginUser,logoutUser}
