@@ -64,21 +64,21 @@ userSchema.methods.isPasswordCorrect = async function(password) {
 // So we are going with sessions and cookies. So to access the cokkie you want the accesstoken but to access the session you want the refresh token.
 // we will be storing the refresh token in the database.
 userSchema.methods.generateAccessToken = function(){
-    jwt.sign(
-    {
-        _id: this._id,
-        email: this.email,
-        username: this.username,
-        fullName: this.fullName
-    },
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRY
-    }
-)
+    return jwt.sign(
+        {
+            _id: this._id,
+            email: this.email,
+            username: this.username,
+            fullName: this.fullName
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+        }
+    )
 }
 userSchema.methods.generateRefreshToken = function(){
-    jwt.sign(
+    return jwt.sign(
         {
             _id: this._id
         },
@@ -180,7 +180,10 @@ export const User = mongoose.model("User",userSchema)
 
 // 🧠 **Behind the scenes**
 
-// * Refresh token still valid
+// * Refresh token still valid 
+// and it checks in the database that both the refresh token are same or not?
+// like whatever the user is sending the refresh token it should be saved in the database then only new 
+// access token is issued and the refreshtoken is accessed through the cookies at the login time.
 // * New access token is issued
 
 // ---

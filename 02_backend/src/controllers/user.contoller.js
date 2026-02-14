@@ -3,8 +3,7 @@ import { asyncHandler2 } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloundinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { access } from "fs";
-import { ref } from "process";
+import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshTokens = async(userId)=>{
     try {
@@ -162,9 +161,14 @@ const loginUser = asyncHandler2(async(req,res)=>{
 
     const {email,username,password} = req.body
 
-    if(!username || !email){
+    if(!username && !email){
         throw new ApiError(400,"username or email is required.")
     }
+
+    // here is an alternative for the above code snippet
+    // if(!(username || email)){
+    //     throw new ApiError(400,"username or email is required.")
+    // }
 
    const user = await User.findOne({
     $or: [{username}, {email} ]
@@ -179,9 +183,9 @@ const loginUser = asyncHandler2(async(req,res)=>{
     throw new ApiError(401,"Invalid user credentials")
    }
 
-    const {accessToken, refreshToken}=await generateAccessAndRefreshTokens(user._id)
+    const {accessToken, refreshToken}= await generateAccessAndRefreshTokens(user._id)
 
-    const loggedInUser = User.findById(user._id).select("-password -refreshToken")
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
     const options = {
         httpOnly: true,
@@ -189,7 +193,7 @@ const loginUser = asyncHandler2(async(req,res)=>{
     }
     // so this options variable is for cookies and in this if we write the following httpOnly as true, 
     // and secure as true then it will only get updated through server side otherwise cookies can get 
-    // updated in the frontend too if we dont false these parameters
+    // updated in the frontend too if we dont true these parameters
 
     // so by default cookie can be modified in frontend too. and with these security steps frontend can only 
     // see the cookie , can't modify it further.
@@ -234,4 +238,38 @@ const logoutUser = asyncHandler2(async(req,res)=>{
     .json(new ApiResponse(200,{},"User logged Out"))
 })
 
-export {registerUser,loginUser,logoutUser}
+
+const refreshAccessToken = asyncHandler2(async (req,res)=>{
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+    if(!incomingRefreshToken){
+        throw new ApiError(401,"unauthorized request / token")
+    }
+    try {
+        const decodedToken = jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET)
+    
+        const user = await User.findById(decodedToken?._id)
+        if(!user){
+            throw new ApiError(401,"Invalid refresh token")
+        }
+        if(incomingRefreshToken !== user?.refreshToken){
+            throw new ApiError(401,"Refresh token is expired or used.")
+        }
+    
+        const options = {
+            httpOnly: true,
+            secure: true
+        } 
+        // so this options make the cookie powerfull enough to get updated through backend only 
+        // frontend cannot edit it but can see it.
+        const {accessToken,newrefreshToken} = await generateAccessAndRefreshTokens(user._id)
+    
+        return res.status(200)
+        .cookie("accessToken",accessToken , options)
+        .cookie("refreshToken",newrefreshToken, options)
+        .json(new ApiResponse(200,{accessToken,refreshToken: newrefreshToken},"Access Token refreshed."))
+    } catch (error) {
+        throw new ApiError(401,error?.message || "Invalid refresh token")
+    }
+})
+
+export {registerUser,loginUser,logoutUser,refreshAccessToken}
