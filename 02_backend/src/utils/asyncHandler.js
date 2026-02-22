@@ -58,3 +58,15 @@ const asyncHandeler3 = (fun) => async(req,res,next) => {
 const asyncHandler4 = (fun) => async(req,res,next) => {
     Promise.resolve(fun(req,res,next)).catch((error)=>{next(error)})
 }
+
+const asyncHandeler4 = (fun) =>{ async (req,res,next) => {
+    try {
+        await fun(req,res,next)
+    } catch (error) {
+        res.status(error.code || 500)
+        .json({
+            status: false,
+            message: error.message
+        })
+    }
+}}
