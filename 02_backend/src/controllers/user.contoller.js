@@ -305,7 +305,7 @@ const changeCurrentPassword = asyncHandler2(async (req,res) => {
 const getCurrentUser = asyncHandler2(async(req,res)=>{
     return res
     .status(200)
-    .json(200,req.user,"Current user fetched successfully")
+    .json(new ApiResponse(200,req.user,"Current user fetched successfully"))
 })
 
 const updateAccountDetails = asyncHandler2(async(req,res)=>{
@@ -395,5 +395,98 @@ const updateUserCoverImage = asyncHandler2(async(req,res)=>{
     .json(new ApiResponse(200,user,"Cover Image is successfully updated."))
 })
 
+
+const getUserChannelProfile = asyncHandler2(async (req,res)=>{
+    const {username} = req.params
+
+    if(!username?.trim()){
+        throw new ApiError(400,"username is missing.")
+    }
+
+    const channel = await User.aggregate([
+        // so this {} it is basically a stage.
+        // it works like synchronically like the first stage cut the database into 2 halfes and then 
+        // next stage database would be that half of the above stage. like it's database would be having 
+        // that upper stage data only
+        {
+            $match:{
+                username: username?.toLowerCase()
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscriber"
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribeTo"
+            }
+        },
+        {
+            $addFields:{
+                subscriberCount: {
+                    $size: "$subscribers"
+                },
+                channelsSubscribedToCount: {
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: {$in: [req.user?._id,"$subscribers.subscriber"]},
+                        then: true,
+                        else: false
+                    }
+                }
+
+                
+            }
+        },
+        {
+            $project: {
+                fullName: 1,
+                username: 1,
+                subscriberCount: 1,
+                channelsSubscribedToCount: 1,
+                isSubscribed: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1
+            }
+        }
+        // so this $project tells us the projection that all of it is used and what all you have to store for the
+        // upper aggregation to work exactly fine.
+
+    ])
+    // so this is the aggregation pipeline which takes input as array as seen in [] brackets and then you
+    // write the aggregate function over there.
+    // MongoDB aggregation is a powerful framework for processing multiple documents, grouping them, and returning computed, summarized results
+    // this is basically used for finding the user with a $match keyword
+    // this $match filters out 1 document it means every object filters 1 document each.
+    // and now i am writing lookup
+    // so here from means from where do you want to look like from which table or model
+    // localfield means from which field you want to check the username
+    // foreignfield means what will you select to get the information that you wanted so here like
+    // if we extract the channel then we'll get the subsriber of that channel .
+    // as means what do you want to save this information as in your model.
+    // so this is somewhat the first pipeline
+
+    if(!channel?.length){
+        throw new ApiError(404,"Channel Doesn't exists.")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,channel[0],"User channel fetched successfully.")
+    )
+})
+
 export {registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser
-    ,updateAccountDetails,updateUserAvatar,updateUserCoverImage}
+    ,updateAccountDetails,updateUserAvatar,updateUserCoverImage,getUserChannelProfile}
