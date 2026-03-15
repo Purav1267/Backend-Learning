@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloundinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshTokens = async(userId)=>{
     try {
@@ -444,7 +445,7 @@ const getUserChannelProfile = asyncHandler2(async (req,res)=>{
                         else: false
                     }
                 }
-
+// $subscribers.subscriber is a field in which we will look for req.user?._id 
                 
             }
         },
@@ -460,6 +461,10 @@ const getUserChannelProfile = asyncHandler2(async (req,res)=>{
                 email: 1
             }
         }
+        // The $project stage in MongoDB aggregation pipelines reshapes documents by selecting,
+        // adding, or removing fields. It enables efficient data shaping by passing only required fields
+        // (using 1 to include or 0 to exclude) to the next stage, reducing data transfer 
+        // and customizing output structure.
         // so this $project tells us the projection that all of it is used and what all you have to store for the
         // upper aggregation to work exactly fine.
 
@@ -488,5 +493,64 @@ const getUserChannelProfile = asyncHandler2(async (req,res)=>{
     )
 })
 
+const getWatchHistory = asyncHandler2(async (req,res) => {
+    // req.user?._id
+
+    // so when we print this req.user?._id this gives us the string as the output of the id
+    // and this is not the original mongodb id it just gives you a string of random alphabet and numbers
+    // and in the backend with the help of mongoose you extract that id from this random thing. 
+    // so this user._id is stored in the database as Objectid("random alphabets & numbers")
+    // mongoose does the extraction in the backend.
+
+    // new mongoose.Types.ObjectId(req.user._id) this is the way of extracting the exact id from mongoose
+    // its easy only that we just have to do the new mongoose.Types.ObjectId
+    const user = await User.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first: "$owner"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,user[0].watchHistory,"Watch History fetched successfully."))
+})
+
+
 export {registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser
-    ,updateAccountDetails,updateUserAvatar,updateUserCoverImage,getUserChannelProfile}
+    ,updateAccountDetails,updateUserAvatar,updateUserCoverImage,getUserChannelProfile,getWatchHistory}
